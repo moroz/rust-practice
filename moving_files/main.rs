@@ -15,9 +15,15 @@ fn main() {
         Regex::new("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$").unwrap();
     let target_directory = resolve_target_directory();
 
-    let children = fs::read_dir(&target_directory).unwrap();
+    let children = fs::read_dir(&target_directory);
+
+    if let Err(_) = children {
+        println!("Could not list directory {}", &target_directory.display());
+        std::process::exit(1);
+    }
 
     let paths: Vec<_> = children
+        .unwrap()
         .into_iter()
         .map(|path| path.unwrap().path())
         .filter(|path| uuid_regex.is_match(&path.file_name().unwrap().to_str().unwrap()))
@@ -30,11 +36,31 @@ fn main() {
     );
 
     for path in paths {
-        let mut target = target_directory.clone();
-        let uuid_prefix = &path.file_name().unwrap().to_str().unwrap()[0..2];
-        target.push(uuid_prefix);
-        if !&target.is_dir() {
-            println!("Creating directory {}", &target.display())
+        let original_path = path.clone();
+        let uuid = &path.file_name().unwrap().to_str().unwrap();
+        let dir_target = target_directory.clone().join(&uuid[0..2]);
+        if !&dir_target.is_dir() {
+            println!("Creating directory {}", &dir_target.display());
+            fs::create_dir(&dir_target).expect(
+                format!("Could not create directory at {}", &dir_target.display()).as_str(),
+            );
+        }
+        let child_target = &dir_target.join(uuid);
+        match fs::rename(&original_path, &child_target) {
+            Ok(_) => {
+                println!(
+                    "Successfully moved {} to {}",
+                    &original_path.display(),
+                    &child_target.display()
+                )
+            }
+            _ => {
+                println!(
+                    "Could not move the directory from {} to {}",
+                    &original_path.display(),
+                    &child_target.display()
+                )
+            }
         }
     }
 }
