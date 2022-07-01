@@ -5,10 +5,9 @@ use clap::Parser;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::io::{self, Write};
 
 pub mod error;
-
-use crate::error::CustomError;
 
 /// Search for a pattern in a file and display the lines that contain it.
 #[derive(Parser)]
@@ -32,6 +31,8 @@ fn main() -> Result<()> {
     })?;
     let mut reader = BufReader::new(f);
     let mut line = String::new();
+    let stdout = io::stdout();
+    let mut handle = io::BufWriter::new(stdout);
 
     loop {
         line.clear();
@@ -40,7 +41,7 @@ fn main() -> Result<()> {
             break;
         }
         if line.contains(&args.pattern) {
-            print!("{}", line);
+            write!(handle, "{}", line)?;
         }
     }
 
