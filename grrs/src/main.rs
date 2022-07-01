@@ -1,5 +1,6 @@
 // #![allow(unused)]
 
+use anyhow::{Context, Result};
 use clap::Parser;
 use std::fs::File;
 use std::io::prelude::*;
@@ -19,16 +20,15 @@ struct Cli {
     path: std::path::PathBuf,
 }
 
-fn main() -> std::io::Result<()> {
+fn main() -> Result<()> {
     let args = Cli::parse();
     // println!("{} {}", args.pattern, args.path.as_path().display());
 
-    let f = File::open(&args.path).map_err(|err| {
-        CustomError(format!(
-            "Error reading `{}`: {}",
-            &args.path.as_path().display(),
-            err
-        ))
+    let f = File::open(&args.path).with_context(|| {
+        format!(
+            "could not open file `{}` for reading",
+            &args.path.as_path().display()
+        )
     })?;
     let mut reader = BufReader::new(f);
     let mut line = String::new();
