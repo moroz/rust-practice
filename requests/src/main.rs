@@ -57,7 +57,7 @@ async fn search(query: &str) -> io::Result<APIResponse> {
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let result = search("Little Simz").await?;
-    println!("{:?}", result);
+    println!("{}", result);
 
     Ok(())
 }
